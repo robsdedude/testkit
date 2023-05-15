@@ -49,6 +49,8 @@ class TestTxLifetime(TestkitTestCase):
         elif driver in ["ruby"]:
             self.assertEqual(exc.errorType,
                              "Neo4j::Driver::Exceptions::ClientException")
+        elif driver in ["rust"]:
+            self.assertEqual(exc.errorType, "TransactionOutOfScope")
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 

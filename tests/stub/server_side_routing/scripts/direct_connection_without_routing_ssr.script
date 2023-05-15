@@ -1,7 +1,7 @@
-!: BOLT #VERSION#
+!: BOLT 4.4
 
 C: HELLO {"scheme": "basic", "credentials": "c", "principal": "p", "user_agent": "007", "[routing]": null, "[realm]": "", "[patch_bolt]": "*"}
-S: SUCCESS {"server": "Neo4j/4.0.0", "connection_id": "bolt-123456789"}
+S: SUCCESS {"server": "Neo4j/4.4.0", "connection_id": "bolt-123456789"}
 *: RESET
 C: RUN "RETURN 1 AS n" {} {}
 S: SUCCESS {"fields": ["n"]}

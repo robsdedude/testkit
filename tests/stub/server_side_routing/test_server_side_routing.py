@@ -10,7 +10,7 @@ from tests.stub.shared import StubServer
 class TestServerSideRouting(TestkitTestCase):
     """Test driver-behavior in Server Side Routing scenarios."""
 
-    required_features = types.Feature.BOLT_4_1,
+    required_features = types.Feature.BOLT_4_4,
 
     def setUp(self):
         super().setUp()
@@ -71,5 +71,8 @@ class TestServerSideRouting(TestkitTestCase):
             self.assertEqual("ArgumentError", exc.exception.errorType)
             # not asserting on the whole URI because the backend normalizes it.
             self.assertIn(params, exc.exception.msg)
+        elif get_driver_name() in ["rust"]:
+            self.assertEqual("ConnectionConfigParseError",
+                             exc.exception.errorType)
         else:
             self.fail("no error mapping is defined for %s driver" % driver)

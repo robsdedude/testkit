@@ -9,7 +9,7 @@ from tests.stub.shared import StubServer
 
 class TestRetryClustering(TestkitTestCase):
 
-    required_features = types.Feature.BOLT_4_3,
+    required_features = types.Feature.BOLT_4_4,
 
     def setUp(self):
         super().setUp()
@@ -283,7 +283,6 @@ class TestRetryClustering(TestkitTestCase):
     def get_vars(self):
         host = self._routingServer.host
         v = {
-            "#VERSION#": "4.3",
             "#HOST#": host,
             "#ROUTINGCTX#":
                 '{"address": "' + host

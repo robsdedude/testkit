@@ -444,3 +444,26 @@ class TestTxRun(TestkitTestCase):
         for commit in (True, False):
             with self.subTest(commit=commit):
                 _test()
+
+    @cluster_unsafe_test
+    def test_tx_res_fails_whole_tx(self):
+        self._driver.close()
+        self._driver = get_driver(self._backend, fetch_size=3)
+        self._session1 = self._driver.session("w")
+        tx = self._session1.begin_transaction()
+        # query will fail in second batch
+        res1 = tx.run("UNWIND [5, 4, 3, 2, 1, 0] AS x "
+                      "MERGE (n:Test {x: 1.0/x}) RETURN n")
+        res1.next()
+        res1.next()
+        res1.next()
+        res1.next()
+        with self.assertRaises(types.DriverError) as exc:
+            # res1 error surfaces here...
+            res2 = tx.run("UNWIND [0, 1, 2, 3, 4, 5] AS n RETURN n")
+            # res2.next()  # needed only for JS
+        self.assertIn("/ by zero", exc.exception.msg)
+        # yet, we have one buffered record left...
+        self.assertEqual(res1.next().values[0].props.value["x"],
+                         types.CypherFloat(1.0))
+        tx.rollback()

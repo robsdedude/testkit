@@ -10,7 +10,7 @@ from tests.stub.shared import StubServer
 # Low-level network transport tests
 class TestTransport(TestkitTestCase):
 
-    required_features = types.Feature.BOLT_4_1,
+    required_features = types.Feature.BOLT_4_4,
 
     def setUp(self):
         super().setUp()
@@ -30,8 +30,7 @@ class TestTransport(TestkitTestCase):
         # Verifies that no op messages sent on bolt chunking layer are ignored.
         # The no op messages are sent from server as a way to notify that the
         # connection is still up.
-        # Bolt 4.1 >
-        bolt_version = "4.1"
+        bolt_version = "4.4"
         self._server.start(path=self.script_path("reader_with_noops.script"),
                            vars_={"#BOLT_VERSION#": bolt_version})
         result = self._session.run("RETURN 1 as n")

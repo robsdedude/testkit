@@ -10,6 +10,9 @@ from tests.stub.shared import StubServer
 
 
 class TestResultScope(TestkitTestCase):
+
+    required_features = (types.Feature.BOLT_4_4,)
+
     def setUp(self):
         super().setUp()
         self._server = StubServer(9001)
@@ -59,6 +62,8 @@ class TestResultScope(TestkitTestCase):
             ])
         elif driver in ["go"]:
             self.assertEqual(exc.msg, "result cursor is not available anymore")
+        elif driver in ["rust"]:
+            self.assertEqual(exc.errorType, "ResultOutOfScope")
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 
@@ -88,6 +93,9 @@ class TestResultScope(TestkitTestCase):
             ])
         elif driver in ["go"]:
             self.assertEqual(exc.msg, "result cursor is not available anymore")
+        elif driver in ["rust"]:
+            self.assertEqual(exc.errorType, "ResultConsumed")
+            self.assertIn("consumed", exc.msg.lower())
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 

@@ -1,5 +1,4 @@
 import nutkit.protocol as types
-from tests.shared import driver_feature
 from tests.stub.routing.test_routing_v5x0 import RoutingV5x0
 
 
@@ -21,6 +20,9 @@ class RoutingV4x4(RoutingV5x0):
 
     def test_should_read_successfully_from_reader_using_session_run_with_default_db_driver(self):  # noqa: E501
         super().test_should_read_successfully_from_reader_using_session_run_with_default_db_driver()  # noqa: E501
+
+    def test_should_read_successfully_from_reader_using_tx_run_adb(self):
+        super().test_should_read_successfully_from_reader_using_tx_run_adb()
 
     def test_should_read_successfully_from_reader_using_tx_run_default_db(self):  # noqa: E501
         super().test_should_read_successfully_from_reader_using_tx_run_default_db()  # noqa: E501
@@ -127,7 +129,6 @@ class RoutingV4x4(RoutingV5x0):
     def test_should_pass_bookmark_from_tx_to_tx_using_tx_run(self):
         super().test_should_pass_bookmark_from_tx_to_tx_using_tx_run()
 
-    @driver_feature(types.Feature.OPT_PULL_PIPELINING)
     def test_should_retry_read_tx_until_success_on_error(self):
         super().test_should_retry_read_tx_until_success_on_error()
 
@@ -197,6 +198,9 @@ class RoutingV4x4(RoutingV5x0):
     def test_should_forget_address_on_database_unavailable_error(self):
         super().test_should_forget_address_on_database_unavailable_error()
 
+    def test_should_forget_router_address_on_database_unavailable_error(self):
+        super().test_should_forget_router_address_on_database_unavailable_error()  # noqa: E501
+
     def test_should_use_resolver_during_rediscovery_when_existing_routers_fail(self):  # noqa: E501
         super().test_should_use_resolver_during_rediscovery_when_existing_routers_fail()  # noqa: E501
 
@@ -224,6 +228,15 @@ class RoutingV4x4(RoutingV5x0):
     def test_should_fail_with_routing_failure_on_any_security_discovery_failure(self):  # noqa: E501
         super().test_should_fail_with_routing_failure_on_any_security_discovery_failure()  # noqa: E501
 
+    def test_should_fail_with_invalid_route_statement_argument(self):
+        super().test_should_fail_with_invalid_route_statement_argument()
+
+    def test_should_fail_with_invalid_routing_request(self):
+        super().test_should_fail_with_invalid_routing_request()
+
+    def test_should_fail_with_type_error_request(self):
+        super().test_should_fail_with_type_error_request()
+
     def test_should_read_successfully_from_reachable_db_after_trying_unreachable_db(self):  # noqa: E501
         super().test_should_read_successfully_from_reachable_db_after_trying_unreachable_db()  # noqa: E501
 
@@ -247,3 +260,30 @@ class RoutingV4x4(RoutingV5x0):
 
     def test_should_fail_when_driver_closed_using_session_run(self):
         super().test_should_fail_when_driver_closed_using_session_run()
+
+    def test_should_fail_when_writing_without_writers_using_session_run(self):
+        super().test_should_fail_when_writing_without_writers_using_session_run()  # noqa: E501
+
+    def test_should_write_successfully_after_leader_switch_using_tx_run(self):
+        super().test_should_write_successfully_after_leader_switch_using_tx_run()  # noqa: E501
+
+    def test_should_rediscover_when_all_connections_fail_using_s_and_tx_run(self):  # noqa: E501
+        super().test_should_rediscover_when_all_connections_fail_using_s_and_tx_run()  # noqa: E501
+
+    def test_should_succeed_when_another_conn_fails_and_discover_using_tx_run(self):  # noqa: E501
+        super().test_should_succeed_when_another_conn_fails_and_discover_using_tx_run()  # noqa: E501
+
+    def test_should_get_rt_from_leader_w_and_r_via_leader_using_session_run(self):  # noqa: E501
+        super().test_should_get_rt_from_leader_w_and_r_via_leader_using_session_run()  # noqa: E501
+
+    def test_should_get_rt_from_follower_w_and_r_via_leader_using_session_run(self):  # noqa: E501
+        super().test_should_get_rt_from_follower_w_and_r_via_leader_using_session_run()  # noqa: E501
+
+    def test_should_drop_connections_failing_liveness_check(self):
+        super().test_should_drop_connections_failing_liveness_check()
+
+    def test_should_enforce_pool_size_per_cluster_member(self):
+        super().test_should_enforce_pool_size_per_cluster_member()
+
+    def test_does_not_use_read_connection_for_write(self):
+        super().test_does_not_use_read_connection_for_write()

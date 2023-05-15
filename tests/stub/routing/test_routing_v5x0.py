@@ -767,6 +767,7 @@ class RoutingV5x0(RoutingBase):
             fails_on_next=True
         )
 
+    @driver_feature(types.Feature.API_DRIVER_VERIFY_CONNECTIVITY)
     def test_should_fail_discovery_when_router_fails_with_procedure_not_found_code(  # noqa: E501
         self
     ):
@@ -813,6 +814,7 @@ class RoutingV5x0(RoutingBase):
         self._routingServer1.done()
         self.assertTrue(failed)
 
+    @driver_feature(types.Feature.API_DRIVER_VERIFY_CONNECTIVITY)
     def test_should_fail_discovery_when_router_fails_with_unknown_code(self):
         driver = Driver(self._backend, self._uri_with_context, self._auth,
                         self._userAgent)
@@ -2114,13 +2116,13 @@ class RoutingV5x0(RoutingBase):
     ):
         driver = Driver(self._backend, self._uri_with_context, self._auth,
                         self._userAgent)
-        self.start_server(self._routingServer1, "router_default_db.script")
+        self.start_server(self._routingServer1,
+                          "router_capability_check.script")
         self.start_server(self._readServer1, "empty_reader.script")
 
         supports_multi_db = driver.supports_multi_db()
 
-        # we don't expect the router or the reader to play the whole
-        # script
+        # we don't expect the router or the reader to play the whole script
         self._routingServer1.reset()
         self._readServer1.reset()
         driver.close()
@@ -2697,6 +2699,11 @@ class RoutingV5x0(RoutingBase):
                         "<class 'neo4j.exceptions.SessionExpired'>",
                         e.exception.errorType
                     )
+            elif get_driver_name() in ["rust"]:
+                if attempt == 0:
+                    self.assertEqual("ServerError", e.exception.errorType)
+                else:
+                    self.assertEqual("Disconnect", e.exception.errorType)
             if attempt == 0:
                 tx.rollback()
             self._writeServer1.done()

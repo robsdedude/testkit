@@ -27,6 +27,9 @@ class TestResultSingle(IterationTestBase):
                 "org.neo4j.driver.exceptions.NoSuchRecordException",
                 error.errorType
             )
+        elif driver in ["rust"]:
+            self.assertEqual("ConfigError", error.errorType)
+            self.assertIn("GetSingleRecordError", error.msg)
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 
@@ -48,6 +51,8 @@ class TestResultSingle(IterationTestBase):
                 "org.neo4j.driver.exceptions.ServiceUnavailableException",
                 error.errorType
             )
+        elif driver in ["rust"]:
+            self.assertIn(error.errorType, ("IncompleteCommit", "Disconnect"))
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 

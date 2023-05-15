@@ -5,6 +5,6 @@ A: HELLO {"{}": "*"}
 C: BEGIN {"db": "adb"}
 S: SUCCESS {}
 C: RUN "RETURN 1 as n" {} {}
-S: SUCCESS {}
+S: SUCCESS {"fields": ["n"]}
 C: PULL {"n": 1000}
 S: <EXIT>

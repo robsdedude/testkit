@@ -329,10 +329,12 @@ class TestOptimizations(TestkitTestCase):
             self._server.done()
 
         for version in ("v4x3", "v4x4"):
+            version_tuple = version[1:].split("x")
             for consume1 in (True, False):
                 for consume2 in (True, False):
                     with self.subTest(version=version, consume1=consume1,
                                       consume2=consume2):
+                        self.skip_if_missing_bolt_support(version_tuple)
                         test()
                     self._server.reset()
                     self._router.reset()

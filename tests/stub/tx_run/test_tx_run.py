@@ -42,6 +42,7 @@ class TestTxRun(TestkitTestCase):
                               types.AuthorizationToken("basic", principal="",
                                                        credentials=""))
 
+    @driver_feature(types.Feature.BOLT_4_4)
     def test_rollback_tx_on_session_close_untouched_result(self):
         # TODO: remove this block once all languages work
         if get_driver_name() in ["javascript"]:
@@ -58,6 +59,7 @@ class TestTxRun(TestkitTestCase):
         self._session = None
         self._server1.done()
 
+    @driver_feature(types.Feature.BOLT_4_4)
     def test_rollback_tx_on_session_close_unfinished_result(self):
         # TODO: remove this block once all languages work
         if get_driver_name() in ["javascript"]:
@@ -75,6 +77,7 @@ class TestTxRun(TestkitTestCase):
         self._session = None
         self._server1.done()
 
+    @driver_feature(types.Feature.BOLT_4_4)
     def test_rollback_tx_on_session_close_consumed_result(self):
         # TODO: remove this block once all languages work
         if get_driver_name() in ["javascript"]:
@@ -93,6 +96,7 @@ class TestTxRun(TestkitTestCase):
         self._session = None
         self._server1.done()
 
+    @driver_feature(types.Feature.BOLT_4_4)
     def test_rollback_tx_on_session_close_finished_result(self):
         # TODO: remove this block once all languages work
         if get_driver_name() in ["javascript"]:
@@ -181,18 +185,19 @@ class TestTxRun(TestkitTestCase):
 
         return exc.exception
 
-    @driver_feature(types.Feature.OPT_EAGER_TX_BEGIN)
+    @driver_feature(types.Feature.OPT_EAGER_TX_BEGIN, types.Feature.BOLT_4_4)
     def test_eager_begin_on_tx_run_with_disconnect_on_begin(self):
         exc = self._eager_tx_run("tx_disconnect_on_begin.script")
         if get_driver_name() in ["python"]:
             self.assertEqual("<class 'neo4j.exceptions.ServiceUnavailable'>",
                              exc.errorType)
 
-    @driver_feature(types.Feature.OPT_EAGER_TX_BEGIN)
+    @driver_feature(types.Feature.OPT_EAGER_TX_BEGIN, types.Feature.BOLT_4_4)
     def test_eager_begin_on_tx_run_with_error_on_begin(self):
         exc = self._eager_tx_run("tx_error_on_begin.script")
         self.assertEqual("Neo.ClientError.MadeUp.Code", exc.code)
 
+    @driver_feature(types.Feature.BOLT_4_4)
     def test_raises_error_on_tx_run(self):
         # TODO: remove this block once all languages work
         if get_driver_name() in ["javascript", "dotnet"]:
@@ -208,6 +213,7 @@ class TestTxRun(TestkitTestCase):
         self.assertEqual(exc.exception.code, "Neo.ClientError.MadeUp.Code")
         tx.rollback()
 
+    @driver_feature(types.Feature.BOLT_4_4)
     def test_raises_error_on_tx_func_run(self):
         # TODO: remove this block once all languages work
         if get_driver_name() in ["javascript", "dotnet"]:
@@ -253,12 +259,15 @@ class TestTxRun(TestkitTestCase):
         self._driver.close()
         self._driver = None
 
+    @driver_feature(types.Feature.BOLT_4_4)
     def test_failed_tx_run_allows_rollback(self):
         self._test_failed_tx_run(rollback=True)
 
+    @driver_feature(types.Feature.BOLT_4_4)
     def test_failed_tx_run_allows_skipping_rollback(self):
         self._test_failed_tx_run(rollback=False)
 
+    @driver_feature(types.Feature.BOLT_5_3)
     def test_should_prevent_pull_after_tx_termination_on_run(self):
         def _test():
             self._create_direct_driver()
@@ -303,6 +312,7 @@ class TestTxRun(TestkitTestCase):
                 _test()
             self._server1.reset()
 
+    @driver_feature(types.Feature.BOLT_5_3)
     def test_should_prevent_discard_after_tx_termination_on_run(self):
         self._create_direct_driver()
         script = "tx_res0_success_res1_error_on_run.script"
@@ -330,6 +340,7 @@ class TestTxRun(TestkitTestCase):
         self._session = None
         self._server1.done()
 
+    @driver_feature(types.Feature.BOLT_4_4)
     def test_should_prevent_run_after_tx_termination_on_run(self):
         self._create_direct_driver()
         script = "tx_error_on_run.script"
@@ -353,6 +364,7 @@ class TestTxRun(TestkitTestCase):
         self._session = None
         self._server1.done()
 
+    @driver_feature(types.Feature.BOLT_5_3)
     def test_should_prevent_run_after_tx_termination_on_pull(self):
         def _test():
             self._create_direct_driver()
@@ -404,6 +416,7 @@ class TestTxRun(TestkitTestCase):
                 _test()
             self._server1.reset()
 
+    @driver_feature(types.Feature.BOLT_5_3)
     def test_should_prevent_pull_after_tx_termination_on_pull(self):
         def _test():
             self._create_direct_driver()
@@ -449,6 +462,7 @@ class TestTxRun(TestkitTestCase):
                 _test()
             self._server1.reset()
 
+    @driver_feature(types.Feature.BOLT_4_4, types.Feature.BOLT_5_3)
     def test_should_prevent_commit_after_tx_termination(self):
         def _test():
             self._create_direct_driver()
@@ -477,6 +491,7 @@ class TestTxRun(TestkitTestCase):
                 _test()
             self._server1.reset()
 
+    @driver_feature(types.Feature.BOLT_5_3)
     def test_should_prevent_rollback_message_after_tx_termination(self):
         def _test():
             self._create_direct_driver()
@@ -518,6 +533,9 @@ class TestTxRun(TestkitTestCase):
             self.assertIn("Neo.ClientError.", e.exception.msg)
         elif driver in ["dotnet"]:
             self.assertEqual("ClientError", e.exception.errorType)
+        elif driver in ["rust"]:
+            self.assertEqual("ServerError", e.exception.errorType)
+            self.assertTrue(e.exception.code.startswith("Neo.ClientError."))
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 
@@ -544,5 +562,15 @@ class TestTxRun(TestkitTestCase):
                     "Cannot run query in this transaction"
                 )
             )
+        elif driver in ["rust"]:
+            if e.exception.errorType == "ServerError":
+                self.assertTrue(
+                    e.exception.code.startswith("Neo.ClientError.")
+                )
+                self.assertRegex(e.exception.msg,
+                                 r"\btransaction\b.*\bclosed\b")
+            else:
+                self.assertEqual("TransactionOutOfScope",
+                                 e.exception.errorType)
         else:
             self.fail("no error mapping is defined for %s driver" % driver)

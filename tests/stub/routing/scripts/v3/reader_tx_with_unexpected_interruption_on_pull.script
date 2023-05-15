@@ -5,6 +5,6 @@ A: HELLO {"{}": "*"}
 C: BEGIN {"mode": "r"}
 S: SUCCESS {}
 C: RUN "RETURN 1 as n" {} {}
-S: SUCCESS {}
+S: SUCCESS {"fields": ["n"]}
 C: PULL_ALL
 S: <EXIT>

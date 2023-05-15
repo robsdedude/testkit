@@ -38,6 +38,8 @@ class AuthorizationBase(TestkitTestCase):
         elif driver in ["ruby"]:
             expected_type = \
                 "Neo4j::Driver::Exceptions::AuthorizationExpiredException"
+        elif driver in ["rust"]:
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -59,6 +61,8 @@ class AuthorizationBase(TestkitTestCase):
                 "org.neo4j.driver.exceptions.SecurityRetryableException"
         elif driver in ["go"]:
             expected_type = "Neo4jError"
+        elif driver in ["rust"]:
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -88,6 +92,8 @@ class AuthorizationBase(TestkitTestCase):
             expected_type = "ClientError"
         elif driver == "go":
             expected_type = "TokenExpiredError"
+        elif driver == "rust":
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -108,6 +114,8 @@ class AuthorizationBase(TestkitTestCase):
                 "org.neo4j.driver.exceptions.SecurityRetryableException"
         elif driver == "go":
             expected_type = "TokenExpiredError"
+        elif driver == "rust":
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -136,6 +144,8 @@ class AuthorizationBase(TestkitTestCase):
                 "org.neo4j.driver.exceptions.AuthenticationException"
         elif driver in ["go"]:
             expected_type = "Neo4jError"
+        elif driver in ["rust"]:
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -156,6 +166,8 @@ class AuthorizationBase(TestkitTestCase):
                 "org.neo4j.driver.exceptions.SecurityRetryableException"
         elif driver in ["go"]:
             expected_type = "Neo4jError"
+        elif driver in ["rust"]:
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -181,6 +193,8 @@ class AuthorizationBase(TestkitTestCase):
             expected_type = "org.neo4j.driver.exceptions.SecurityException"
         elif driver in ["go"]:
             expected_type = "Neo4jError"
+        elif driver in ["rust"]:
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -201,6 +215,8 @@ class AuthorizationBase(TestkitTestCase):
             expected_type = "OtherSecurityException"
         elif driver in ["go"]:
             expected_type = "Neo4jError"
+        elif driver in ["rust"]:
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -224,6 +240,8 @@ class AuthorizationBase(TestkitTestCase):
             expected_type = "DriverError"
         elif driver in ["go"]:
             expected_type = "Neo4jError"
+        elif driver in ["rust"]:
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -247,6 +265,8 @@ class AuthorizationBase(TestkitTestCase):
             expected_type = "ClientError"
         elif driver in ["go"]:
             expected_type = "Neo4jError"
+        elif driver in ["rust"]:
+            expected_type = "ServerError"
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
         if expected_type is not None:
@@ -291,6 +311,10 @@ class AuthorizationBase(TestkitTestCase):
         elif driver in ["go"]:
             self.assertEqual("feature not supported", error.errorType)
             self.assertIn("session auth", error.msg)
+        elif driver in ["rust"]:
+            self.assertEqual("ConfigError", error.errorType)
+            self.assertIn("session auth", error.msg)
+            self.assertIn("not supported", error.msg)
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 

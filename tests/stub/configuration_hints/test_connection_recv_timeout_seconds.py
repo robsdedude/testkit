@@ -70,6 +70,8 @@ class TestDirectConnectionRecvTimeout(TestkitTestCase):
                 e.msg.lower(),
                 r"server didn't respond in \d+ ?ms",
             )
+        elif driver in ["rust"]:
+            self.assertIn(e.errorType, ("IncompleteCommit", "Disconnect"))
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 
@@ -99,6 +101,8 @@ class TestDirectConnectionRecvTimeout(TestkitTestCase):
             self.assertTrue(
                 e.msg.startswith("Cannot run query in this transaction")
             )
+        elif driver in ["rust"]:
+            self.assertEqual("TransactionOutOfScope", e.errorType)
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 
