@@ -97,10 +97,9 @@ class TestDirectConnectionRecvTimeout(TestkitTestCase):
                 e.errorType.startswith("cannot use this transaction")
             )
         elif driver in ["dotnet"]:
-            self.assertEqual("ClientError", e.errorType)
-            self.assertTrue(
-                e.msg.startswith("Cannot run query in this transaction")
-            )
+            self.assertEqual("TransactionTerminatedError", e.errorType)
+        elif driver in ["javascript"]:
+            self.assertEqual("Neo4jError", e.errorType)
         elif driver in ["rust"]:
             self.assertEqual("TransactionOutOfScope", e.errorType)
         else:
@@ -114,8 +113,6 @@ class TestDirectConnectionRecvTimeout(TestkitTestCase):
         self._start_server("1_second_exceeds.script")
         with self.assertRaises(types.DriverError) as exc:
             result = self._session.run("timeout")
-            # TODO It will be removed as soon as JS Driver
-            # has async iterator api
             if get_driver_name() in ["javascript", "dotnet"]:
                 result.next()
 
@@ -134,8 +131,6 @@ class TestDirectConnectionRecvTimeout(TestkitTestCase):
         tx = self._session.begin_transaction()
         with self.assertRaises(types.DriverError) as exc:
             result = tx.run("timeout")
-            # TODO It will be removed as soon as JS Driver
-            # has async iterator api
             if get_driver_name() in ["javascript", "dotnet"]:
                 result.next()
         # TODO Remove when explicit rollback requirement is removed
@@ -162,8 +157,6 @@ class TestDirectConnectionRecvTimeout(TestkitTestCase):
         tx = self._session.begin_transaction()
         with self.assertRaises(types.DriverError) as first_run_error:
             result = tx.run("timeout")
-            # TODO It will be removed as soon as JS Driver
-            # has async iterator api
             if get_driver_name() in ["javascript", "dotnet"]:
                 result.next()
 
@@ -197,8 +190,6 @@ class TestDirectConnectionRecvTimeout(TestkitTestCase):
             if retries == 1:
                 with self.assertRaises(types.DriverError) as exc:
                     result = tx.run("RETURN 1 AS n")
-                    # TODO It will be removed as soon as JS Driver
-                    # has async iterator api
                     if get_driver_name() in ["javascript", "dotnet"]:
                         result.next()
 

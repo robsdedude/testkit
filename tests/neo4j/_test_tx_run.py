@@ -460,7 +460,7 @@ class TestTxRun(TestkitTestCase):
         res1.next()
         with self.assertRaises(types.DriverError) as exc:
             # res1 error surfaces here...
-            res2 = tx.run("UNWIND [0, 1, 2, 3, 4, 5] AS n RETURN n")
+            _ = tx.run("UNWIND [0, 1, 2, 3, 4, 5] AS n RETURN n")
             # res2.next()  # needed only for JS
         self.assertIn("/ by zero", exc.exception.msg)
         # yet, we have one buffered record left...
