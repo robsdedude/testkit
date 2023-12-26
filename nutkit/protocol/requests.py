@@ -405,6 +405,11 @@ class DomainNameResolutionCompleted:
     the backend. This must only be sent immediately after the backend requests
     a new address resolution by replying with the DomainNameResolutionRequired
     response.
+
+    N.B., this resolution mechanism is not a replacement for DNS resolution,
+    but rather a pre-DNS resolution hook. Addresses returned by the resolver
+    may be IP addresses, or they may be domain names that still need to be
+    resolved by the driver.
     """
 
     def __init__(self, requestId, addresses):

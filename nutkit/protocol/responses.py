@@ -239,6 +239,11 @@ class DomainNameResolutionRequired:
     This means that the backend is expecting the frontend
     to call the domain name resolver function and submit a new request
     with the results of it.
+
+    N.B., this resolution mechanism is not a replacement for DNS resolution,
+    but rather a pre-DNS resolution hook. Addresses returned by the resolver
+    may be IP addresses, or they may be domain names that still need to be
+    resolved by the driver.
     """
 
     def __init__(self, id, name):
