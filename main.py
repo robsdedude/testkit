@@ -130,8 +130,7 @@ def initialise_configurations(settings):
         )
     ]
 
-    configurations = list(filter(lambda conf: conf is not None,
-                                 configurations))
+    configurations = [conf for conf in configurations if conf is not None]
     return configurations
 
 
@@ -162,11 +161,7 @@ def construct_configuration_list(configurations, requested_list):
 
     # Now try to find the requested configs and check they are available
     # with current teamcity status
-    configs = []
-    for config in configurations:
-        if config.name in requested_list:
-            configs.append(config)
-    return configs
+    return [conf for conf in configurations if conf.name in requested_list]
 
 
 def parse_command_line(configurations, argv):
