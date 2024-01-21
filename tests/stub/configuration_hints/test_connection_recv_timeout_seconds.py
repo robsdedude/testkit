@@ -101,7 +101,7 @@ class TestDirectConnectionRecvTimeout(TestkitTestCase):
         elif driver in ["javascript"]:
             self.assertEqual("Neo4jError", e.errorType)
         elif driver in ["rust"]:
-            self.assertEqual("TransactionOutOfScope", e.errorType)
+            self.assertEqual("Disconnect", e.errorType)
         else:
             self.fail("no error mapping is defined for %s driver" % driver)
 
