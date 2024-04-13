@@ -16,6 +16,10 @@ class Feature(Enum):
     # The driver offers a method to run a query in a retryable context at the
     # driver object level.
     API_DRIVER_EXECUTE_QUERY = "Feature:API:Driver.ExecuteQuery"
+    # The driver allows users to specify a session scoped auth token when
+    # invoking driver.executeQuery.
+    API_DRIVER_EXECUTE_QUERY_WITH_AUTH = \
+        "Feature:API:Driver.ExecuteQuery:WithAuth"
     # The driver offers a method for checking if a connection to the remote
     # server of cluster can be established and retrieve the server info of the
     # reached remote.
@@ -63,6 +67,8 @@ class Feature(Enum):
     # The session supports notification filters configuration.
     API_SESSION_NOTIFICATIONS_CONFIG = \
         "Feature:API:Session:NotificationsConfig"
+    # The driver implements configuration for client certificates.
+    API_SSL_CLIENT_CERTIFICATE = "Feature:API:SSLClientCertificate"
     # The driver implements explicit configuration options for SSL.
     #  - enable / disable SSL
     #  - verify signature against system store / custom cert / not at all
