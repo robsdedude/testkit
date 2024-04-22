@@ -99,11 +99,6 @@ func main() {
 		fmt.Println("Failed to receive Bolt handshake")
 		exitWithError(err)
 	}
-	_, err = conn.Write([]byte{0x00, 0x00, 0x00, 0x00})
-	if err != nil {
-		fmt.Println("Failed to send Bolt handshake")
-		exitWithError(err)
-	}
 	conn.Close()
 
 	// Just check the signature
