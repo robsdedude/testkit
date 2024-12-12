@@ -125,6 +125,8 @@ class Feature(Enum):
     BOLT_5_6 = "Feature:Bolt:5.6"
     # The driver supports Bolt protocol version 5.7
     BOLT_5_7 = "Feature:Bolt:5.7"
+    # The driver supports Bolt protocol version 5.8
+    BOLT_5_8 = "Feature:Bolt:5.8"
     # The driver supports patching DateTimes to use UTC for Bolt 4.3 and 4.4
     BOLT_PATCH_UTC = "Feature:Bolt:Patch:UTC"
     # The driver supports impersonation
@@ -167,6 +169,10 @@ class Feature(Enum):
     # sending BEGIN but pipelines the RUN and PULL right afterwards and
     # consumes three messages after that. This saves 2 full round-trips.
     OPT_EXECUTE_QUERY_PIPELINING = "Optimization:ExecuteQueryPipelining"
+    # The home db cache for optimistic home db resolution treats the principal
+    # in basic auth the exact same way it treats impersonated users.
+    OPT_HOME_DB_CACHE_BASIC_PRINCIPAL_IS_IMP_USER = \
+        "Optimization:HomeDbCacheBasicPrincipalIsImpersonatedUser"
     # Driver doesn't explicitly send message data that is the default value.
     # This conserves bandwidth.
     OPT_IMPLICIT_DEFAULT_ARGUMENTS = "Optimization:ImplicitDefaultArguments"
