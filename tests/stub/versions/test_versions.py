@@ -153,9 +153,18 @@ class TestProtocolVersions(TestkitTestCase):
     def test_supports_bolt5x4(self):
         self._run("5x4")
 
+    @driver_feature(types.Feature.BOLT_5_6)
+    def test_supports_bolt5x6(self):
+        self._run("5x6")
+
+    @driver_feature(types.Feature.BOLT_5_7)
+    def test_supports_bolt5x7(self):
+        self._run("5x7")
+
     def test_server_version(self):
         for version in (
-            "5x4", "5x3", "5x2", "5x1", "5x0", "4x4", "4x3", "4x2", "4x1", "3"
+            "5x7", "5x6", "5x4", "5x3", "5x2", "5x1", "5x0",
+            "4x4", "4x3", "4x2", "4x1", "3"
         ):
             if not self.driver_supports_bolt(version):
                 continue
@@ -164,7 +173,8 @@ class TestProtocolVersions(TestkitTestCase):
 
     def test_server_agent(self):
         for version in (
-            "5x4", "5x3", "5x2", "5x1", "5x0", "4x4", "4x3", "4x2", "4x1", "3"
+            "5x7", "5x6", "5x4", "5x3", "5x2", "5x1", "5x0",
+            "4x4", "4x3", "4x2", "4x1", "3"
         ):
             for agent, reject in (
                 ("Neo4j/4.3.0", False),
@@ -198,7 +208,8 @@ class TestProtocolVersions(TestkitTestCase):
         if get_driver_name() in ["javascript", "dotnet"]:
             self.skipTest("Backend doesn't support server address in summary")
         for version in (
-            "5x4", "5x3", "5x2", "5x1", "5x0", "4x4", "4x3", "4x2", "4x1", "3"
+            "5x7", "5x6", "5x4", "5x3", "5x2", "5x1", "5x0",
+            "4x4", "4x3", "4x2", "4x1", "3"
         ):
             if not self.driver_supports_bolt(version):
                 continue
@@ -230,7 +241,7 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_3x0(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="3", script="v3_and_up_optional_hello.script"
         )
@@ -239,7 +250,7 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_4x1(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="4.1", script="v3_and_up_optional_hello.script"
         )
@@ -248,7 +259,7 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_4x2(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="4.2", script="v3_and_up_optional_hello.script"
         )
@@ -257,7 +268,7 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_4x3(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="4.3", script="v3_and_up_optional_hello.script"
         )
@@ -266,7 +277,7 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_4x4(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="4.4", script="v3_and_up_optional_hello.script"
         )
@@ -275,7 +286,7 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_5x0(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="5.0", script="v3_and_up_optional_hello.script"
         )
@@ -284,7 +295,7 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_5x1(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="5.1", script="v5x1_and_up_optional_hello.script"
         )
@@ -293,7 +304,7 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_5x2(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="5.2", script="v5x1_and_up_optional_hello.script"
         )
@@ -302,7 +313,7 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_5x3(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="5.3", script="v5x1_and_up_optional_hello.script"
         )
@@ -311,9 +322,18 @@ class TestProtocolVersions(TestkitTestCase):
     def test_should_reject_server_using_verify_connectivity_bolt_5x4(self):
         # TODO remove this block once fixed
         if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
-            self.skipTest("driver does not check server agent")
+            self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="5.4", script="v5x1_and_up_optional_hello.script"
+        )
+
+    @driver_feature(types.Feature.BOLT_5_6)
+    def test_should_reject_server_using_verify_connectivity_bolt_5x6(self):
+        # TODO remove this block once fixed
+        if get_driver_name() in ["dotnet", "go", "javascript"]:
+            self.skipTest("Driver does not check server agent string")
+        self._test_should_reject_server_using_verify_connectivity(
+            version="5.6", script="v5x1_and_up_optional_hello.script"
         )
 
     def _test_should_reject_server_using_verify_connectivity(
