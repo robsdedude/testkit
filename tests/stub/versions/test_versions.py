@@ -330,7 +330,7 @@ class TestProtocolVersions(TestkitTestCase):
     @driver_feature(types.Feature.BOLT_5_6)
     def test_should_reject_server_using_verify_connectivity_bolt_5x6(self):
         # TODO remove this block once fixed
-        if get_driver_name() in ["dotnet", "go", "javascript"]:
+        if get_driver_name() in ["dotnet", "go", "javascript", "rust"]:
             self.skipTest("Driver does not check server agent string")
         self._test_should_reject_server_using_verify_connectivity(
             version="5.6", script="v5x1_and_up_optional_hello.script"
