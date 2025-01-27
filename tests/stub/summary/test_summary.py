@@ -893,7 +893,10 @@ class TestSummaryGqlStatusObjects4x4(_TestSummaryGqlStatusObjectsBase):
 
 
 class TestSummaryGqlStatusObjects5x6(_TestSummaryGqlStatusObjectsBase):
-    required_features = types.Feature.BOLT_5_6,
+    required_features = (
+        types.Feature.BOLT_5_6,
+        types.Feature.API_SUMMARY_GQL_STATUS_OBJECTS,
+    )
     version_folder = "v5x6",
 
     @classmethod
