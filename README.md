@@ -11,7 +11,7 @@ Environment variables:
     Set to the name of the driver in lowercase. This is currently used for
     adjusting the set of skipped tests and the expected outcome of some tests.  
     Currently known drivers are `dotnet`, `go`, `java`, `javascript`, `python`,
-    and `ruby`.
+    `ruby`, and `rust`.
   * `TEST_DRIVER_REPO`  
     Path to driver repository.
   * `TEST_BRANCH`  
