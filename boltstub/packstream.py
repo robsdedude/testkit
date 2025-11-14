@@ -23,13 +23,15 @@ from io import BytesIO
 from struct import pack as struct_pack
 from struct import unpack as struct_unpack
 
-from .simple_jolt.common import types as jolt_common_types
-from .simple_jolt.v1 import types as jolt_v1_types
-from .simple_jolt.v2 import types as jolt_v2_types
+from .simple_jolt.common import jolt_types as jolt_common_types
+from .simple_jolt.v1 import jolt_types as jolt_v1_types
+from .simple_jolt.v2 import jolt_types as jolt_v2_types
+from .simple_jolt.v3 import jolt_types as jolt_v3_types
 
 _jolt_types = {
     1: jolt_v1_types,
     2: jolt_v2_types,
+    3: jolt_v3_types,
 }
 
 
@@ -56,6 +58,16 @@ UNPACKED_MARKERS.update({bytes(bytearray([z + 256])): z
 INT64_MIN = -(2 ** 63)
 INT64_MAX = 2 ** 63
 
+V3_VECTOR_TYPE_MARKER = {
+    "i8": b"\xc8",
+    "i16": b"\xc9",
+    "i32": b"\xca",
+    "i64": b"\xcb",
+    "f32": b"\xc6",
+    "f64": b"\xc1",
+}
+V3_VECTOR_DTYPE = {v: k for k, v in V3_VECTOR_TYPE_MARKER.items()}
+
 
 EndOfStream = object()
 
@@ -81,6 +93,11 @@ class StructTagV2(StructTagV1):
     date_time_zone_id = b"\x69"
 
 
+class StructTagV3(StructTagV2):
+    vector = b"\x56"
+    unsupported = b"\x3F"
+
+
 class Structure:
 
     def __init__(self, tag, *fields, packstream_version=None, verified=True):
@@ -88,7 +105,7 @@ class Structure:
         self.fields = list(fields)
         self._packstream_version = packstream_version
         self._verified = verified
-        if packstream_version not in (None, 1, 2):
+        if packstream_version not in (None, 1, 2, 3):
             raise ValueError("Unknown packstream version: %s"
                              % packstream_version)
 
@@ -104,6 +121,8 @@ class Structure:
             PackstreamV1StructureValidator.verify_fields(self)
         elif self._packstream_version == 2:
             PackstreamV2StructureValidator.verify_fields(self)
+        elif self._packstream_version == 3:
+            PackstreamV3StructureValidator.verify_fields(self)
 
     @property
     def verified(self):
@@ -162,8 +181,12 @@ class Structure:
 
     def match_jolt_wildcard(self, wildcard: jolt_common_types.JoltWildcard):
         jolt_types_ = jolt_types(self._packstream_version)
-        struct_tags = (StructTagV1 if self._packstream_version == 1
-                       else StructTagV2)
+        if self._packstream_version == 1:
+            struct_tags = StructTagV1
+        elif self._packstream_version == 2:
+            struct_tags = StructTagV2
+        else:
+            struct_tags = StructTagV3
         for t in wildcard.types:
             if issubclass(t, jolt_types_.JoltDate):
                 if self.tag == struct_tags.date:
@@ -196,6 +219,21 @@ class Structure:
             elif issubclass(t, jolt_types_.JoltPath):
                 if self.tag == struct_tags.path:
                     return True
+            elif (
+                hasattr(jolt_types_, "JoltVector")
+                and issubclass(t, jolt_types_.JoltVector)
+                and hasattr(struct_tags, "vector")
+                and self.tag == struct_tags.vector
+            ):
+                return True
+            elif (
+                hasattr(jolt_types_, "JoltUnsupportedType")
+                and issubclass(t, jolt_types_.JoltUnsupportedType)
+                and hasattr(struct_tags, "unsupported")
+                and self.tag == struct_tags.unsupported
+            ):
+                return True
+        return False
 
     @classmethod
     def _from_jolt_v1_type(cls, jolt: jolt_v1_types.JoltType):
@@ -375,11 +413,40 @@ class Structure:
         raise TypeError("Unsupported jolt type: {}".format(type(jolt)))
 
     @classmethod
+    def _from_jolt_v3_type(cls, jolt: jolt_v3_types.JoltType):
+        if isinstance(jolt, jolt_v3_types.JoltVector):
+            dtype_marker = V3_VECTOR_TYPE_MARKER.get(jolt.dtype)
+            if dtype_marker is None:
+                raise ValueError(f"Unsupported vector dtype: {jolt.dtype}")
+            return cls(
+                StructTagV3.vector,
+                dtype_marker,
+                jolt.data,
+                packstream_version=3,
+            )
+        if isinstance(jolt, jolt_v3_types.JoltUnsupportedType):
+            if jolt.message is not None:
+                extra = {"message": jolt.message}
+            else:
+                extra = {}
+            return cls(
+                StructTagV3.unsupported,
+                jolt.name,
+                jolt.minimum_protocol_major,
+                jolt.minimum_protocol_minor,
+                extra,
+                packstream_version=3,
+            )
+        raise TypeError("Unsupported jolt type: {}".format(type(jolt)))
+
+    @classmethod
     def from_jolt_type(cls, jolt: jolt_common_types.JoltType):
         if isinstance(jolt, jolt_v1_types.JoltType):
             return cls._from_jolt_v1_type(jolt)
         elif isinstance(jolt, jolt_v2_types.JoltType):
             return cls._from_jolt_v2_type(jolt)
+        elif isinstance(jolt, jolt_v3_types.JoltType):
+            return cls._from_jolt_v3_type(jolt)
         raise TypeError("Unsupported jolt type: {}".format(type(jolt)))
 
     def _to_jolt_v1_type(self):
@@ -482,6 +549,41 @@ class Structure:
             return jolt_v2_types.JoltPath(*path)
         raise TypeError("Unsupported struct type: {}".format(self.tag))
 
+    def _to_jolt_v3_type(self):
+        if self.tag in (
+            StructTagV2.date,
+            StructTagV2.time,
+            StructTagV2.local_time,
+            StructTagV2.date_time,
+            StructTagV2.date_time_zone_id,
+            StructTagV2.local_date_time,
+            StructTagV2.duration,
+            StructTagV2.point_2d,
+            StructTagV2.point_3d,
+            StructTagV2.node,
+            StructTagV2.relationship,
+            StructTagV2.path,
+        ):
+            return self._to_jolt_v2_type()
+        if self.tag == StructTagV3.vector:
+            dtype_marker, data = self.fields
+            dtype = V3_VECTOR_DTYPE[dtype_marker]
+            return jolt_v3_types.JoltVector(dtype, data)
+        if self.tag == StructTagV3.unsupported:
+            (
+                name, protocol_minimum_major,
+                protocol_minimum_minor, extra
+            ) = self.fields
+            if "message" in extra:
+                return jolt_v3_types.JoltUnsupportedType(
+                    name, protocol_minimum_major,
+                    protocol_minimum_minor, extra["message"]
+                )
+            return jolt_v3_types.JoltUnsupportedType(
+                name, protocol_minimum_major, protocol_minimum_minor
+            )
+        raise TypeError("Unsupported struct type: {}".format(self.tag))
+
     def to_jolt_type(self):
         if not self._verified:
             raise ValueError("Can only convert verified struct to jolt type")
@@ -489,6 +591,8 @@ class Structure:
             return self._to_jolt_v1_type()
         elif self._packstream_version == 2:
             return self._to_jolt_v2_type()
+        elif self._packstream_version == 3:
+            return self._to_jolt_v3_type()
         raise ValueError(
             "JOLT encoding is only defined for packstream_version 1 and 2, "
             "not {}".format(self._packstream_version)
@@ -636,6 +740,8 @@ class PackstreamV1StructureValidator:
 
 class PackstreamV2StructureValidator(PackstreamV1StructureValidator):
 
+    packstream_version = 2
+
     @classmethod
     def _verify_node(cls, structure, fields):
         validations = [
@@ -704,6 +810,36 @@ class PackstreamV2StructureValidator(PackstreamV1StructureValidator):
         if tag in field_validator:
             return field_validator[tag](structure, fields)
         return super().verify_fields(structure)
+
+
+class PackstreamV3StructureValidator(PackstreamV2StructureValidator):
+
+    packstream_version = 3
+
+    @classmethod
+    def _verify_vector(cls, structure, fields):
+        validations = [
+            lambda f: len(f) == 2,
+            lambda f: isinstance(f[0], bytes),
+            lambda f: isinstance(f[1], bytes),
+            lambda f: f[0] in V3_VECTOR_DTYPE.keys(),
+        ]
+        cls._validate_validations(validations, "Vector",
+                                  structure, fields)
+
+    @classmethod
+    def verify_fields(cls, structure: Structure):
+        super().verify_fields(structure)
+
+        tag, fields = structure.tag, structure.fields
+
+        field_validator = {
+            StructTagV3.vector: cls._verify_vector,
+        }
+
+        if tag in field_validator:
+            field_validator[tag](structure, fields)
+        return True
 
 
 class Packer:

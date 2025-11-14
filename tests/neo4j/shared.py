@@ -3,22 +3,28 @@ Shared utilities for writing tests against Neo4j server.
 
 Uses environment variables for configuration:
 
-TEST_NEO4J_SCHEME    Scheme to build the URI when contacting the Neo4j server,
-                     default "bolt"
-TEST_NEO4J_HOST      Neo4j server host, no default, required
-TEST_NEO4J_PORT      Neo4j server port, default is 7687
-TEST_NEO4J_USER      User to access the Neo4j server, default "neo4j"
-TEST_NEO4J_PASS      Password to access the Neo4j server, default "pass"
-TEST_NEO4J_VERSION   Version of the Neo4j server, default "4.4"
-TEST_NEO4J_EDITION   Edition ("enterprise", "community", or "aura") of the
-                     Neo4j server, default "enterprise"
-TEST_NEO4J_CLUSTER   Whether the Neo4j server is a cluster, default "False"
+TEST_NEO4J_SCHEME      Scheme to build the URI when contacting the Neo4j
+                       server, default "bolt"
+TEST_NEO4J_HOST        Neo4j server host, no default, required
+TEST_NEO4J_PORT        Neo4j server port, default is 7687
+TEST_NEO4J_USER        User to access the Neo4j server, default "neo4j"
+TEST_NEO4J_PASS        Password to access the Neo4j server, default "pass"
+TEST_NEO4J_VERSION     Version of the Neo4j server, default "4.4"
+TEST_NEO4J_EDITION     Edition ("enterprise", "community", or "aura") of the
+                       Neo4j server, default "enterprise"
+TEST_NEO4J_CLUSTER     Whether the Neo4j server is a cluster, default "False"
+TEST_NEO4J_DEFAULT_DB  Default database name, default "neo4j"
 """
 
 
 import os
 import re
+import traceback
 from functools import wraps
+from time import (
+    sleep,
+    time,
+)
 from warnings import warn
 
 from nutkit import protocol
@@ -42,6 +48,7 @@ env_neo4j_http_port = "TEST_NEO4J_HTTP_PORT"
 env_neo4j_version = "TEST_NEO4J_VERSION"
 env_neo4j_edition = "TEST_NEO4J_EDITION"
 env_neo4j_cluster = "TEST_NEO4J_CLUSTER"
+env_neo4j_default_db = "TEST_NEO4J_DEFAULT_DB"
 env_neo4j_client_cert = "TEST_NEO4J_SSL_CLIENT_CERT"
 env_neo4j_client_key = "TEST_NEO4J_SSL_CLIENT_KEY"
 
@@ -79,6 +86,10 @@ def get_neo4j_scheme():
     return scheme
 
 
+def get_default_db():
+    return os.environ.get(env_neo4j_default_db, "neo4j")
+
+
 def get_client_certificate():
     client_certificate_key = os.environ.get(env_neo4j_client_key)
     client_certificate_cert = os.environ.get(env_neo4j_client_cert)
@@ -110,6 +121,8 @@ class ServerInfo:
         self.version = version
         self.edition = edition
         self.cluster = cluster
+        self._parsed_version = None
+        self._is_dev_version = None
 
     @property
     def server_agent(self):
@@ -117,7 +130,7 @@ class ServerInfo:
             raise ValueError(
                 "We can't predict the server's agent string for aura!"
             )
-        if re.match(r"(\d+)\.dev", self.version):
+        if self.is_dev_version:
             raise ValueError(
                 "We can't predict the server's agent string for dev versions!"
             )
@@ -125,46 +138,77 @@ class ServerInfo:
 
     @property
     def supports_multi_db(self):
-        return self.version >= "4" and self.edition == "enterprise"
+        return (
+            self.max_protocol_version >= (4, 0)
+            and self.edition == "enterprise"
+        )
+
+    @property
+    def supports_vectors(self):
+        return (
+            self.max_protocol_version >= (6, 0)
+            and self.edition in {"enterprise", "aura"}
+        )
 
     # [bolt-version-bump] search tag when updating IT matrix
     @property
     def max_protocol_version(self):
-        match = re.match(r"(\d+)\.dev", self.version)
-        if match:
-            version = (int(match.group(1)), float("inf"))
-        else:
-            version = tuple(int(i) for i in self.version.split(".")[:2])
+        if self.edition == "aura" and self.is_dev_version:
+            return 5, 8
+        version = self.parsed_version()
+        if version >= (2025, 10):
+            return 6, 0
         if version >= (5, 26):
-            return "5.8"
+            # bolt 5.7 and 5.8 were released in a single server version
+            return 5, 8
         if version >= (5, 23):
-            return "5.6"
+            return 5, 6
         # bolt 5.5 was never released
         if version >= (5, 13):
-            return "5.4"
+            return 5, 4
         if version >= (5, 9):
-            return "5.3"
+            return 5, 3
         if version >= (5, 7):
-            return "5.2"
+            return 5, 2
         if version >= (5, 5):
-            return "5.1"
+            return 5, 1
         if version >= (5, 0):
-            return "5.0"
+            return 5, 0
         if version >= (4, 4):
-            return "4.4"
+            return 4, 4
         if version >= (4, 3):
-            return "4.3"
+            return 4, 3
         if version >= (4, 2):
-            return "4.2"
+            return 4, 2
         raise ValueError(f"Unsupported Neo4j version to test: {self.version}")
+
+    def common_protocol_versions(self, driver_features):
+        driver_bolt_features = bolt_versions_in_features(driver_features)
+        max_server_protocol_version = self.max_protocol_version
+        return [
+            version for (version, _feature) in driver_bolt_features
+            if version <= max_server_protocol_version
+        ]
 
     @property
     def has_utc_patch(self):
-        if self.version >= "5":
+        version = self.parsed_version()
+        if version >= (5, 0):
             return Potential.YES
-        if self.version >= "4.3":
+        if version >= (4, 3):
             return Potential.MAYBE
         return Potential.NO
+
+    def parsed_version(self):
+        if self._parsed_version is None:
+            self._parsed_version = parse_version(self.version)
+        return self._parsed_version
+
+    @property
+    def is_dev_version(self):
+        if self._is_dev_version is None:
+            self._is_dev_version = bool(re.match(r"(\d+)\.dev", self.version))
+        return self._is_dev_version
 
 
 def get_server_info():
@@ -207,6 +251,22 @@ def requires_multi_db_support(func):
     return wrapper
 
 
+def requires_vector_support(func):
+    def get_valid_test_case(*args, **kwargs):
+        if not args or not isinstance(args[0], TestkitTestCase):
+            raise TypeError("Should only decorate TestkitTestCase methods")
+        return args[0]
+
+    @requires_min_bolt_version("6.0")
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        test_case = get_valid_test_case(*args, **kwargs)
+        if not get_server_info().supports_vectors:
+            test_case.skipTest("Server does not support vector types.")
+        return func(*args, **kwargs)
+    return wrapper
+
+
 def requires_min_bolt_version(min_version):
     def get_valid_test_case(*args, **kwargs):
         if not args or not isinstance(args[0], TestkitTestCase):
@@ -237,22 +297,40 @@ def has_min_bolt_version(min_version, test_case):
     return not _skip_reason_min_bolt_version(min_version, test_case)
 
 
+def bolt_versions_in_features(features):
+    return (
+        (parse_version(f.value.split(":")[-1]), f)
+        for f in features
+        if re.match(r"BOLT_(\d+_)*(\d+)", f.name)
+    )
+
+
 def _skip_reason_min_bolt_version(min_version, test_case):
+    if isinstance(min_version, str):
+        min_version = parse_version(min_version)
     server_max_version = get_server_info().max_protocol_version
+    all_version_features = bolt_versions_in_features(protocol.Feature)
     all_viable_versions = [
-        f for f in protocol.Feature
-        if (re.match(r"BOLT_(\d+_)*(\d+)", f.name)
-            and min_version <= f.value.split(":")[-1] <= server_max_version)
+        feature for (version, feature) in all_version_features
+        if min_version <= version <= server_max_version
     ]
 
     if server_max_version < min_version:
         test_case.skipTest("Server does not support minimum required "
-                           "Bolt version: " + min_version)
+                           f"Bolt version: {min_version}")
     missing = test_case.driver_missing_features(*all_viable_versions)
     if len(missing) == len(all_viable_versions):
         test_case.skipTest("There is no common version between server "
                            "and driver that fulfills the minimum "
-                           "required protocol version: " + min_version)
+                           f"required protocol version: {min_version}")
+
+
+def parse_version(v: str):
+    match = re.match(r"(\d+)\.dev", v)
+    if match:
+        return int(match.group(1)), float("inf")
+    else:
+        return tuple(int(i) for i in v.split(".")[:2])
 
 
 class QueryBuilder:
@@ -263,21 +341,69 @@ class QueryBuilder:
 
     @staticmethod
     def _wait_clause(version):
-        return " WAIT" if version >= "4.2" else ""
+        return " WAIT" if version >= (4, 2) else ""
 
     @staticmethod
-    def create_db(database, wait=True):
-        version = get_server_info().version
-        return "CREATE DATABASE {}{}".format(
+    def create_db(database, if_not_exists=True, wait=True):
+        version = get_server_info().parsed_version()
+        return "CREATE DATABASE {}{}{}".format(
             QueryBuilder.escape_identifier(database),
+            " IF NOT EXISTS" if if_not_exists else "",
             QueryBuilder._wait_clause(version) if wait else ""
         )
 
     @staticmethod
     def drop_db(database, if_exists=True, wait=True):
-        version = get_server_info().version
+        version = get_server_info().parsed_version()
         return "DROP  DATABASE {}{}{}".format(
             QueryBuilder.escape_identifier(database),
             " IF EXISTS" if if_exists else "",
             QueryBuilder._wait_clause(version) if wait else ""
         )
+
+    @staticmethod
+    def call_subquery(subquery, imports=()):
+        version = get_server_info().parsed_version()
+        imports = ", ".join(list(map(QueryBuilder.escape_identifier, imports)))
+        if not imports:
+            return (
+                f"CALL {{\n"
+                f"    {subquery}\n"
+                "}"
+            )
+        if version >= (5, 23):
+            return (
+                f"CALL ({imports}) {{\n"
+                f"    {subquery}\n"
+                "}"
+            )
+        else:
+            return (
+                f"CALL {{\n"
+                f"    WITH {imports}\n"
+                f"    {subquery}\n"
+                "}"
+            )
+
+
+def with_retries(work, *args, **kwargs):
+    t0 = None
+    t_last = time()
+    while True:
+        try:
+            return work(*args, **kwargs)
+        except protocol.DriverError as e:
+            if not e.retryable:
+                raise
+            if t0 is None:
+                t0 = time()
+            if time() - t0 > 30:
+                raise
+            to_sleep = 0.5 - (time() - t_last)
+            if to_sleep > 0:
+                sleep(to_sleep)
+            t_last = time()
+            warn(
+                f"Retrying due to retryable error: {traceback.format_exc()}",
+                stacklevel=1,
+            )

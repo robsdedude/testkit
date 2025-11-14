@@ -479,6 +479,107 @@ class CypherDuration:
                    for attr in ("months", "days", "seconds", "nanoseconds"))
 
 
+class CypherVector:
+    r"""
+    A cypher vector.
+
+    :param dtype: "i8", "i16", "i32", "i64", "f32", or "f64".
+    :param data: bytes representing the vector's data (big-endian),
+        e.g. b"\x01\x02\x03\xff" or
+        "01 02 03 ff" (IMPORTANT: with spaces and lower-case).
+    """
+
+    def __init__(self, dtype, data):
+        self.dtype = str(dtype)
+        self.data = data
+        if isinstance(data, (bytes, bytearray)):
+            # e.g. "ff 01"
+            self.data = " ".join("{:02x}".format(byte) for byte in data)
+
+    def __str__(self):
+        return (
+            "CypherVector(dtype={}, data={})".format(self.dtype, self.data)
+        )
+
+    def __repr__(self):
+        return (
+            "<{}(dtype={}, data={})>"
+            .format(self.__class__.__name__, self.dtype, self.data)
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+
+        return all(getattr(self, attr) == getattr(other, attr)
+                   for attr in ("dtype", "data"))
+
+
+class CypherUnsupportedType:
+    r"""
+    A cypher unsupported type.
+
+    :param name: The name of the unsupported type.
+    :param minimum_protocol: The bolt version needed for the type.
+    :param message: An optional message to the user.
+    """
+
+    def __init__(
+        self, name, minimumProtocol, message=None
+    ):
+        self.name = str(name)
+        self.minimum_protocol = minimumProtocol
+        if message is None:
+            self.message = None
+        else:
+            self.message = str(message)
+
+    def __str__(self):
+        if self.message is None:
+            return (
+                "CypherUnsupportedType(name={}, minimum_protocol={})"
+                .format(
+                    self.name, self.minimum_protocol,
+                )
+            )
+        else:
+            return (
+                "CypherUnsupportedType(name={}, "
+                "minimum_protocol={}, message={})"
+                .format(
+                    self.name, self.minimum_protocol, self.message
+                )
+            )
+
+    def __repr__(self):
+        if self.message is None:
+            return (
+                "<{}(name={}, minimum_protocol={}"
+                .format(
+                    self.__class__.__name__, self.name,
+                    self.minimum_protocol,
+                )
+            )
+        else:
+            return (
+                "<{}(name={}, minimum_protocol={}, message={})>"
+                .format(
+                    self.__class__.__name__,
+                    self.name, self.minimum_protocol, self.message
+                )
+            )
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+
+        return all(
+            getattr(self, attr) == getattr(other, attr) for attr in (
+                "name", "minimum_protocol", "message"
+            )
+        )
+
+
 def as_cypher_type(value):
     if value is None:
         return CypherNull()
@@ -507,6 +608,8 @@ def as_cypher_type(value):
             CypherTime,
             CypherDateTime,
             CypherDuration,
+            CypherVector,
+            CypherUnsupportedType,
         )
     ):
         return value

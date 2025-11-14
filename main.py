@@ -96,33 +96,32 @@ def initialise_configurations(settings):
         generate_config(version_, enterprise_, cluster_, scheme_, stress_test_)
         for (version_, enterprise_, cluster_, scheme_, stress_test_) in (
             # not officially supported versions
-            ("4.2",    True,        False,    "neo4j",  0),
-            ("4.3",    True,        False,    "neo4j",  0),
-            # official backwards-compatibility
-            # LTS version
-            ("4.4",    False,       False,    "bolt",   0),
-            ("4.4",    False,       False,    "neo4j",  0),
-            ("4.4",    True,        False,    "bolt",   0),
-            ("4.4",    True,        False,    "neo4j",  0),
-            ("4.4",    True,        True,     "neo4j", 90),
+            ("4.2",       True,        False,    "neo4j",  0),
+            ("4.3",       True,        False,    "neo4j",  0),
+            ("4.4",       True,        False,    "neo4j",  0),
             # Selected 5.x versions
             # Oldest 5.x version (BOLT 5.0) would be 5.0.
             # However, that has no tag at dockerhub, so we use 5.1
             # https://github.com/neo4j/docker-neo4j/issues/391
-            ("5.1",    True,        True,     "neo4j",  0),
+            ("5.1",       True,        True,     "neo4j",  0),
             # Bolt 5.1
-            ("5.5",    True,        True,     "neo4j",  0),
+            ("5.5",       True,        True,     "neo4j",  0),
             # Bolt 5.2
-            ("5.7",    True,        True,     "neo4j",  0),
+            ("5.7",       True,        True,     "neo4j",  0),
             # Bolt 5.3
-            ("5.9",    True,        True,     "neo4j",  0),
+            ("5.9",       True,        True,     "neo4j",  0),
             # Bolt 5.4
-            ("5.13",   True,        True,     "neo4j",  0),
+            ("5.13",      True,        True,     "neo4j",  0),
             # Bolt 5.5 (skipped - no server released with support)
             # Bolt 5.6
-            ("5.23",   True,        True,     "neo4j",  0),
+            ("5.23",      True,        True,     "neo4j",  0),
             # Bolt 5.7 + 5.8
-            ("5.26",   True,        True,     "neo4j",  0),
+            # official backwards-compatibility
+            # LTS version
+            ("5.26",      True,        True,     "neo4j",  0),
+            # Bolt 6.0
+            # TODO: uncomment when server is released
+            # ("2025.10",   True,        True,     "neo4j",  0),
         )
     ]
     configurations += [
@@ -130,14 +129,15 @@ def initialise_configurations(settings):
                            docker_tag=docker_tag)
         for (version_, docker_tag, enterprise_, cluster_, scheme_,  stress)
         in (
-            # nightly build of official backwards-compatible version
-            ("4.4",    "4.4",      True,        True,     "neo4j", 60),
-            # latest version
-            ("5.dev",  "5",        False,       False,    "bolt",   0),
-            ("5.dev",  "5",        False,       False,    "neo4j",  0),
-            ("5.dev",  "5",        True,        False,    "bolt",  90),
-            ("5.dev",  "5",        True,        False,    "neo4j",  0),
-            ("5.dev",  "5",        True,        True,     "neo4j", 90),
+            # nightly build of official backwards-compatible version(s)
+            ("5.26",     "5",      True,        False,    "neo4j",  0),
+            ("5.26",     "5",      True,        True,     "neo4j", 60),
+            # nightly build of matching version(s)
+            ("2025.dev", "2025",   False,       False,    "bolt",   0),
+            ("2025.dev", "2025",   False,       False,    "neo4j",  0),
+            ("2025.dev", "2025",   True,        False,    "bolt",  90),
+            ("2025.dev", "2025",   True,        False,    "neo4j",  0),
+            ("2025.dev", "2025",   True,        True,     "neo4j", 90),
         )
     ]
 
@@ -196,19 +196,20 @@ def parse_command_line(configurations, argv):
         "Flag to *only* run integration tests with an externally started "
         "database. This flag is not compatible with any other flag.\n\n"
         "Supported environment variables:\n"
-        "TEST_NEO4J_SCHEME    Scheme to build the URI when contacting the "
+        "TEST_NEO4J_SCHEME      Scheme to build the URI when contacting the "
         'Neo4j server, default "bolt"\n'
-        "TEST_NEO4J_HOST      Neo4j server host, no default, required\n"
-        "TEST_NEO4J_PORT      Neo4j server port, default is 7687\n"
-        "TEST_NEO4J_USER      User to access the Neo4j server, default "
+        "TEST_NEO4J_HOST        Neo4j server host, no default, required\n"
+        "TEST_NEO4J_PORT        Neo4j server port, default is 7687\n"
+        "TEST_NEO4J_USER        User to access the Neo4j server, default "
         '"neo4j"\n'
-        "TEST_NEO4J_PASS      Password to access the Neo4j server, default "
+        "TEST_NEO4J_PASS        Password to access the Neo4j server, default "
         '"pass"\n'
-        'TEST_NEO4J_VERSION   Version of the Neo4j server, default "4.4"\n'
-        'TEST_NEO4J_EDITION   Edition ("enterprise", "community", or "aura") '
-        'of the Neo4j server, default "enterprise"\n'
-        "TEST_NEO4J_CLUSTER   Whether the Neo4j server is a cluster, default "
-        '"False"\n'
+        'TEST_NEO4J_VERSION     Version of the Neo4j server, default "4.4"\n'
+        'TEST_NEO4J_EDITION     Edition ("enterprise", "community", '
+        'or "aura") of the Neo4j server, default "enterprise"\n'
+        "TEST_NEO4J_CLUSTER     Whether the Neo4j server is a cluster, "
+        'default "False"\n'
+        'TEST_NEO4J_DEFAULT_DB  Default database name, default "neo4j"\n'
     )
     servers_help = "Optional space separated list selected from: "
     for config in configurations:

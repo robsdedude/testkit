@@ -148,7 +148,7 @@ def get_driver_name():
 
 class TestkitTestCase(unittest.TestCase):
 
-    required_features = None
+    required_features = ()
 
     def setUp(self):
         super().setUp()
@@ -221,6 +221,46 @@ class TestkitTestCase(unittest.TestCase):
         base_path = os.path.dirname(inspect.getfile(self.__class__))
         return os.path.join(base_path, "scripts", *path)
 
+    def get_newest_bolt_supported_by_driver(
+        self,
+        skip=0,
+        min_version=(0, 0),
+        max_version=(0xFF, 0xFF),
+    ):
+        # skip: number of newest versions to skip (return n-th newest)
+        # min_version: minimum bolt version to consider
+        # max_version: maximum bolt version to consider
+        all_bolt_versions = [
+            (f, tuple(map(int, f.value.split(":")[-1].split("."))))
+            for f in protocol.Feature
+            if re.match(r"^BOLT_\d+_\d+$", f.name)
+        ]
+        filtered_bolt_versions = [
+            (f, v) for f, v in all_bolt_versions
+            if max_version >= v >= min_version
+        ]
+        filtered_bolt_versions.sort(key=lambda x: x[1], reverse=True)
+        for feature, version in filtered_bolt_versions:
+            if self.driver_supports_features(feature):
+                if skip <= 0:
+                    return version
+                skip -= 1
+        self.skipTest("No appropriate bolt version supported by driver")
+
+    def should_run_subtest(self, **params):
+        response = self._backend.send_and_receive(
+            protocol.StartSubTest(self._testkit_test_name, params)
+        )
+        if isinstance(response, protocol.SkipTest):
+            return False
+        elif isinstance(response, protocol.RunTest):
+            return True
+        else:
+            raise Exception(
+                "Should be SkipTest, or RunTest, "
+                "received {}: {}".format(type(response), response)
+            )
+
     @contextmanager
     def subTest(self, **params):  # noqa: N802
         assert "msg" not in params
@@ -250,6 +290,10 @@ class TestkitTestCase(unittest.TestCase):
                     raise Exception("Should be SkipTest, or RunTest, "
                                     "received {}: {}".format(type(response),
                                                              response))
+
+    def uncheckedSubTest(self, **params):  # noqa: N802
+        assert "msg" not in params
+        return super().subTest(**params)
 
 
 class Potential(enum.Enum):

@@ -39,6 +39,14 @@ Environment variables:
     you also need to set:
   * `TEST_AWS_ECR_URI`  
     The URL to the docker container registry where nightly builds are stored.
+  * `TEST_BACKEND_TIMEOUT`  
+    The default socket timeout to use when waiting for the TestKit backend to
+    respond. This can be any finite float value (in seconds).
+    The default is `60.0` seconds.
+  * `TEST_RUSTY_STUB`  
+    *Temporary environment variable*.
+    Set to `true` to use the Rust rewrite of the bolt stub server instead of
+    the original Python implementation.
 
 ```console
 export TEST_DRIVER_NAME=go
@@ -70,6 +78,8 @@ Environment variables used to control how tests are executed:
     default "enterprise"
   * `TEST_NEO4J_CLUSTER`  
     Whether the Neo4j server is a cluster, default "False"
+  * `TEST_NEO4J_DEFAULT_DB`
+    Default database name, default "neo4j"
   * `TEST_NEO4J_PORT`  
     Defaults to Bolt port 7687, normally not needed.
   * `TEST_BACKEND_HOST`  
@@ -118,7 +128,8 @@ TestKit or for debugging local backends:
     Set to `1` to disable TestKit timing out if the backend takes longer than
     the usually enforced timeout. This is very handy if you want to step through
     the backend or driver with a debugger without TestKit canceling the tests
-    due to a timed out connection.
+    due to a timed out connection.  
+    You may not set this variable if `TEST_BACKEND_TIMEOUT` is already set.
 
 
 ### Running tests against a specific backend

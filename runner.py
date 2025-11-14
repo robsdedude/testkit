@@ -4,11 +4,17 @@ import docker
 
 
 def _ensure_image(testkit_path, branch_name, artifacts_path):
-    """Ensure that an up to date Docker image exists."""
+    """Ensure that an up-to-date Docker image exists."""
     # Construct Docker image name from branch name
     image_name = "runner:%s" % branch_name
     image_path = os.path.join(testkit_path, "runner_image")
-    docker.build_and_tag(image_name, image_path, log_path=artifacts_path)
+    boltstub_path = os.path.join(testkit_path, "boltstub_rs")
+    docker.build_and_tag(
+        image_name,
+        image_path,
+        log_path=artifacts_path,
+        build_contexts={"boltstub": boltstub_path},
+    )
 
     return image_name
 
@@ -81,7 +87,8 @@ class Container:
             "TEST_NEO4J_SCHEME": neo4j_config.scheme,
             "TEST_NEO4J_VERSION": neo4j_config.version,
             "TEST_NEO4J_EDITION": neo4j_config.edition,
-            "TEST_NEO4J_CLUSTER": neo4j_config.cluster
+            "TEST_NEO4J_CLUSTER": neo4j_config.cluster,
+            "TEST_NEO4J_DEFAULT_DB": "neo4j",
         })
         self._container.exec(
             ["python3", "-m", "tests.neo4j.suites", suite, neo4j_config.name],
@@ -95,7 +102,8 @@ class Container:
                     "TEST_NEO4J_SCHEME",
                     "TEST_NEO4J_VERSION",
                     "TEST_NEO4J_EDITION",
-                    "TEST_NEO4J_CLUSTER"):
+                    "TEST_NEO4J_CLUSTER",
+                    "TEST_NEO4J_DEFAULT_DB"):
             self._env.update({key: os.environ.get(key)})
         if self._env.get("TEST_NEO4J_HOST") == "localhost":
             self._env.update({"TEST_NEO4J_HOST": "host.docker.internal"})
@@ -128,7 +136,8 @@ class Container:
             "TEST_NEO4J_SCHEME": neo4j_config.scheme,
             "TEST_NEO4J_VERSION": neo4j_config.version,
             "TEST_NEO4J_EDITION": neo4j_config.edition,
-            "TEST_NEO4J_CLUSTER": neo4j_config.cluster
+            "TEST_NEO4J_CLUSTER": neo4j_config.cluster,
+            "TEST_NEO4J_DEFAULT_DB": "neo4j",
         })
         self._container.exec(
             ["python3", "-m", "unittest", "-v", test_pattern],
@@ -142,7 +151,8 @@ class Container:
                     "TEST_NEO4J_SCHEME",
                     "TEST_NEO4J_VERSION",
                     "TEST_NEO4J_EDITION",
-                    "TEST_NEO4J_CLUSTER"):
+                    "TEST_NEO4J_CLUSTER",
+                    "TEST_NEO4J_DEFAULT_DB"):
             self._env.update({key: os.environ.get(key)})
         if self._env.get("TEST_NEO4J_HOST") == "localhost":
             self._env.update({"TEST_NEO4J_HOST": "host.docker.internal"})

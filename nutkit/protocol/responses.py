@@ -508,53 +508,8 @@ class Summary:
         # TODO: remove block when all drivers support the fields
         # ---------------------------------------------------------------------
         from tests.shared import get_driver_name
-        if get_driver_name() in ["javascript"]:
-            # already sends counters but the wrong format and not all fields
-            if "_stats" in data["counters"]:
-                del data["counters"]
-            else:
-                import warnings
-                warnings.warn(  # noqa: B028
-                    "Backend supports well-formatted counter. "
-                    "Remove the backwards compatibility check!"
-                )
-        if get_driver_name() in ["javascript", "go"]:
-            if "counters" in data:
-                import warnings
-                warnings.warn(  # noqa: B028
-                    "Backend supports counters field in Summary. "
-                    "Remove the backwards compatibility check!"
-                )
-            else:
-                data["counters"] = {
-                    "constraintsAdded": None,
-                    "constraintsRemoved": None,
-                    "containsSystemUpdates": None,
-                    "containsUpdates": None,
-                    "indexesAdded": None,
-                    "indexesRemoved": None,
-                    "labelsAdded": None,
-                    "labelsRemoved": None,
-                    "nodesCreated": None,
-                    "nodesDeleted": None,
-                    "propertiesSet": None,
-                    "relationshipsCreated": None,
-                    "relationshipsDeleted": None,
-                    "systemUpdates": None
-                }
-            if "query" in data:
-                import warnings
-                warnings.warn(  # noqa: B028
-                    "Backend supports query field in Summary. "
-                    "Remove the backwards compatibility check!"
-                )
-            else:
-                data["query"] = {
-                    "text": None,
-                    "parameters": None
-                }
+        if get_driver_name() in ["go", "javascript"]:
             for field in (
-                "database", "notifications", "plan", "profile",
                 "queryType", "resultAvailableAfter", "resultConsumedAfter"
             ):
                 if field in data:
@@ -765,7 +720,7 @@ class DriverError(BaseError):
     test framework needs to check detailed error handling.
     """
 
-    def __init__(self, id=None, errorType=None, msg="", code="",
+    def __init__(self, id=None, errorType=None, msg="", code="",  # noqa: B042
                  retryable=None, gqlStatus=None, statusDescription=None,
                  cause=None, diagnosticRecord=None, classification=None,
                  rawClassification=None):
@@ -850,6 +805,7 @@ class FrontendError(BaseError):
     """
 
     def __init__(self, msg):
+        super().__init__(msg)
         self.msg = msg
 
     def __str__(self):
@@ -876,6 +832,7 @@ class BackendError(BaseError):
     """
 
     def __init__(self, msg):
+        super().__init__(msg)
         self.msg = msg
 
     def __str__(self):

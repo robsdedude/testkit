@@ -223,9 +223,9 @@ class TestConnectionAcquisitionTimeoutMs(TestkitTestCase):
         with self.assertRaises(types.DriverError):
             list(self._session.run("RETURN 1 AS n"))
 
-    def test_router_handshake_has_own_timeout_in_time(self):
+    def test_router_handshake_shares_acquisition_timeout(self):
         self._start_server(self._router, "router_hello_delay.script")
-        self._start_server(self._server, "session_run_auth_delay.script")
+        self._start_server(self._server, "empty_hello_delay.script")
 
         uri = "neo4j://%s" % self._router.address
         auth = types.AuthorizationToken("basic", principal="neo4j",
@@ -234,7 +234,8 @@ class TestConnectionAcquisitionTimeoutMs(TestkitTestCase):
                               connection_acquisition_timeout_ms=6000,
                               connection_timeout_ms=720000)
         self._session = self._driver.session("r")
-        list(self._session.run("RETURN 1 AS n"))
+        with self.assertRaises(types.DriverError):
+            list(self._session.run("RETURN 1 AS n"))
 
         self._session.close()
         self._session = None
@@ -257,9 +258,9 @@ class TestConnectionAcquisitionTimeoutMs(TestkitTestCase):
         with self.assertRaises(types.DriverError):
             list(self._session.run("RETURN 1 AS n"))
 
-    def test_does_not_encompass_router_route_response(self):
+    def test_does_encompass_router_route_response(self):
         self._start_server(self._router, "router_route_delay.script")
-        self._start_server(self._server, "session_run.script")
+        self._start_server(self._server, "empty_hello.script")
 
         uri = "neo4j://%s" % self._router.address
         auth = types.AuthorizationToken("basic", principal="neo4j",
@@ -268,14 +269,17 @@ class TestConnectionAcquisitionTimeoutMs(TestkitTestCase):
                               connection_acquisition_timeout_ms=2000,
                               connection_timeout_ms=720000)
         self._session = self._driver.session("r")
-        list(self._session.run("RETURN 1 AS n"))
+        with self.assertRaises(types.DriverError):
+            list(self._session.run("RETURN 1 AS n"))
 
         self._session.close()
         self._session = None
         self._driver.close()
         self._driver = None
-        self._router.done()
-        self._server.done()
+        self._router.reset()
+        self._server.done(ignore_never_started=True)
+        self.assertEqual(self._router.count_requests("ROUTE"), 1)
+        self.assertEqual(self._server.count_responses("<ACCEPT>"), 0)
 
     @driver_feature(types.Feature.OPT_EAGER_TX_BEGIN)
     def test_should_regulate_the_time_for_acquiring_connections(self):
